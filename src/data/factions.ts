@@ -1,4 +1,6 @@
 import type {
+  AppearanceLayer,
+  LayerTransform,
   AppearanceOptionKey,
   AppearanceOptionSet,
   AppearanceVisualOption,
@@ -7,17 +9,64 @@ import type {
   Gender
 } from './types';
 
+const baseLayerTransform: LayerTransform = { x: 0, y: 0, scale: 1, rotation: 0 };
+
+const defaultTransformsByCategory: Record<string, LayerTransform> = {
+  'hair-style': { x: 0, y: -6, scale: 1, rotation: 0 },
+  'hair-color': { x: 0, y: -6, scale: 1, rotation: 0 },
+  'face-shape': { x: 0, y: 0, scale: 1, rotation: 0 },
+  'eye-shape': { x: 0, y: 0, scale: 1, rotation: 0 },
+  'eye-color': { x: 0, y: 0, scale: 1, rotation: 0 },
+  nose: { x: 0, y: 2, scale: 1, rotation: 0 },
+  lips: { x: 0, y: 4, scale: 1, rotation: 0 },
+  accessory: { x: 0, y: -2, scale: 1, rotation: 0 },
+  clothing: { x: 0, y: 10, scale: 1, rotation: 0 }
+};
+
+const assetVariantCounts: Record<string, number> = {
+  'hair-style': 6,
+  'hair-color': 5,
+  'face-shape': 4,
+  'eye-shape': 3,
+  'eye-color': 5,
+  nose: 3,
+  lips: 3,
+  accessory: 6,
+  clothing: 6
+};
+
+const zIndexByCategory: Record<string, number> = {
+  'face-shape': 10,
+  'eye-shape': 20,
+  'eye-color': 21,
+  nose: 30,
+  lips: 40,
+  'hair-color': 50,
+  'hair-style': 55,
+  accessory: 70,
+  clothing: 80
+};
+
 const createVisualOptions = (
   category: string,
   labels: string[],
   prefix: string
 ): AppearanceVisualOption[] => {
-  return labels.map((label, index) => ({
-    id: `${prefix}-${String(index + 1).padStart(2, '0')}`,
-    label,
-    thumbnailSrc: `/images/appearance/${category}.svg`,
-    layerSrc: `/images/appearance/${category}.svg`
-  }));
+  const variantCount = assetVariantCounts[category] ?? 1;
+  const defaultTransform = defaultTransformsByCategory[category] ?? baseLayerTransform;
+  const zIndex = zIndexByCategory[category] ?? 50;
+  return labels.map((label, index) => {
+    const variantIndex = ((index % variantCount) + 1).toString().padStart(2, '0');
+    const assetPath = `/images/appearance/${category}/${variantIndex}.svg`;
+    return {
+      id: `${prefix}-${String(index + 1).padStart(2, '0')}`,
+      label,
+      thumbnailSrc: assetPath,
+      assetSrc: assetPath,
+      zIndex,
+      defaultTransform: { ...defaultTransform }
+    };
+  });
 };
 
 const mergeVisualOptionLists = (
@@ -35,6 +84,13 @@ const mergeVisualOptionLists = (
   });
   return merged;
 };
+
+export const createAppearanceLayer = (option: AppearanceVisualOption): AppearanceLayer => ({
+  optionId: option.id,
+  assetSrc: option.assetSrc,
+  zIndex: option.zIndex,
+  transform: { ...option.defaultTransform }
+});
 
 const baseAppearanceOptions: AppearanceOptionSet = {
   hairStyle: createVisualOptions('hair-style', [
@@ -1091,16 +1147,12 @@ export const getClothingOptions = (factionId: string): AppearanceVisualOption[] 
 
 export const getInitialAppearance = (factionId: string): CharacterAppearance => {
   const options = getAppearanceOptions(factionId);
-  return {
-    hairStyle: options.hairStyle[0]?.id ?? '',
-    hairColor: options.hairColor[0]?.id ?? '',
-    faceShape: options.faceShape[0]?.id ?? '',
-    eyeShape: options.eyeShape[0]?.id ?? '',
-    eyeColor: options.eyeColor[0]?.id ?? '',
-    nose: options.nose[0]?.id ?? '',
-    lips: options.lips[0]?.id ?? '',
-    accessory: options.accessory[0]?.id ?? ''
-  };
+  const appearance = {} as CharacterAppearance;
+  (Object.keys(options) as AppearanceOptionKey[]).forEach((key) => {
+    const option = options[key][0] ?? null;
+    appearance[key] = option ? createAppearanceLayer(option) : null;
+  });
+  return appearance;
 };
 
 export const getRandomName = (faction: Faction, gender: Gender): string => {

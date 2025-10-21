@@ -4,7 +4,7 @@ import { StepControls } from './StepControls';
 import { OptionSelector } from './OptionSelector';
 import type { OptionSelectorOption } from './OptionSelector';
 import type { AppearanceOptionKey, AppearanceOptionSet, CharacterState, Faction } from '../data/types';
-import { getAppearanceOptions, getClothingOptions, getRandomFromArray, getRandomName } from '../data/factions';
+import { createAppearanceLayer, getAppearanceOptions, getClothingOptions, getRandomFromArray, getRandomName } from '../data/factions';
 
 interface CharacterCreatorProps {
   faction: Faction;
@@ -98,9 +98,13 @@ export const CharacterCreator = ({
     }));
   }, [clothingOptions]);
 
-  const resolveAppearanceLabel = (key: AppearanceOptionKey, id: string) => {
+  const resolveAppearanceLabel = (key: AppearanceOptionKey, layer: CharacterState['appearance'][AppearanceOptionKey]) => {
     const options = appearanceOptions[key];
-    return options.find((option) => option.id === id)?.label ?? 'Не выбрано';
+    const optionId = layer?.optionId;
+    if (!optionId) {
+      return 'Не выбрано';
+    }
+    return options.find((option) => option.id === optionId)?.label ?? 'Не выбрано';
   };
 
   const resolveClothingLabel = (id: string) => {
@@ -112,11 +116,12 @@ export const CharacterCreator = ({
   };
 
   const setAppearanceField = (key: AppearanceOptionKey, value: string) => {
+    const option = appearanceOptions[key].find((item) => item.id === value) ?? null;
     onChange({
       ...character,
       appearance: {
         ...character.appearance,
-        [key]: value
+        [key]: option ? createAppearanceLayer(option) : null
       }
     });
   };
@@ -134,8 +139,13 @@ export const CharacterCreator = ({
         const options = getAppearanceOptions(faction.id);
         const updated = { ...character.appearance };
         appearanceFields.forEach(({ key }) => {
-          const option = getRandomFromArray(options[key]);
-          updated[key] = option.id;
+          const pool = options[key];
+          if (pool.length === 0) {
+            updated[key] = null;
+            return;
+          }
+          const option = getRandomFromArray(pool);
+          updated[key] = createAppearanceLayer(option);
         });
         onChange({ ...character, appearance: updated });
         break;
@@ -152,14 +162,17 @@ export const CharacterCreator = ({
     const gender = character.gender;
     const randomizedAppearance = { ...character.appearance };
     appearanceFields.forEach(({ key }) => {
-      randomizedAppearance[key] = getRandomFromArray(options[key]).id;
+      const pool = options[key];
+      randomizedAppearance[key] = pool.length > 0 ? createAppearanceLayer(getRandomFromArray(pool)) : null;
     });
+
+    const randomClothing = clothingOptions.length > 0 ? getRandomFromArray(clothingOptions).id : character.clothing;
 
     onChange({
       ...character,
       name: getRandomName(faction, gender),
       appearance: randomizedAppearance,
-      clothing: getRandomFromArray(clothingOptions).id
+      clothing: randomClothing
     });
   };
 
@@ -236,7 +249,7 @@ export const CharacterCreator = ({
                 <OptionSelector
                   key={key}
                   label={label}
-                  value={character.appearance[key]}
+                  value={character.appearance[key]?.optionId ?? ''}
                   options={appearanceSelectorOptions[key]}
                   onSelect={(value) => setAppearanceField(key, value)}
                 />

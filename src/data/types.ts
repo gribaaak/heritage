@@ -1,22 +1,41 @@
 export type Gender = 'male' | 'female';
 
+export interface LayerTransform {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+export interface AppearanceLayer {
+  optionId: string;
+  assetSrc: string;
+  zIndex: number;
+  transform: LayerTransform;
+}
+
 export interface AppearanceVisualOption {
   id: string;
   label: string;
   thumbnailSrc: string;
-  layerSrc?: string;
+  assetSrc: string;
+  zIndex: number;
+  defaultTransform: LayerTransform;
 }
 
-export interface CharacterAppearance {
-  hairStyle: string;
-  hairColor: string;
-  faceShape: string;
-  eyeShape: string;
-  eyeColor: string;
-  nose: string;
-  lips: string;
-  accessory: string;
-}
+export type AppearanceOptionKey =
+  | 'hairStyle'
+  | 'hairColor'
+  | 'faceShape'
+  | 'eyeShape'
+  | 'eyeColor'
+  | 'nose'
+  | 'lips'
+  | 'accessory';
+
+export type AppearanceOptionSet = Record<AppearanceOptionKey, AppearanceVisualOption[]>;
+
+export type CharacterAppearance = Record<AppearanceOptionKey, AppearanceLayer | null>;
 
 export interface CharacterState {
   name: string;
@@ -24,10 +43,6 @@ export interface CharacterState {
   appearance: CharacterAppearance;
   clothing: string;
 }
-
-export type AppearanceOptionKey = keyof CharacterAppearance;
-
-export type AppearanceOptionSet = Record<AppearanceOptionKey, AppearanceVisualOption[]>;
 
 export interface FactionOptionsExtension {
   appearance?: Partial<Record<AppearanceOptionKey, AppearanceVisualOption[]>>;
