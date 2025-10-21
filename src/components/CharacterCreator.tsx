@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { CharacterPreview } from './CharacterPreview';
 import { StepControls } from './StepControls';
 import { OptionSelector } from './OptionSelector';
+import type { OptionSelectorOption } from './OptionSelector';
 import type { AppearanceOptionKey, AppearanceOptionSet, CharacterState, Faction } from '../data/types';
 import { getAppearanceOptions, getClothingOptions, getRandomFromArray, getRandomName } from '../data/factions';
 
@@ -32,6 +33,44 @@ const appearanceFields: { key: AppearanceOptionKey; label: string }[] = [
   { key: 'accessory', label: 'Особенность' }
 ];
 
+const swatchColorsByAppearanceKey: Partial<Record<AppearanceOptionKey, Record<string, string>>> = {
+  hairColor: {
+    Светлые: '#f3e9c6',
+    Русые: '#d7b98a',
+    Темные: '#5c4431',
+    Медные: '#c46b3a',
+    Чёрные: '#1f1c1a',
+    Пшеничные: '#f2dd93',
+    Пепельные: '#c8c5b9',
+    Рыжие: '#d1532f'
+  },
+  eyeColor: {
+    Серые: '#b7c0c8',
+    Карие: '#5c3b1d',
+    Синие: '#3d6bb0',
+    Зелёные: '#2f8a62',
+    Ореховые: '#6f4f28'
+  }
+};
+
+const createSelectorOptions = (
+  key: AppearanceOptionKey,
+  options: AppearanceOptionSet[AppearanceOptionKey]
+): OptionSelectorOption[] => {
+  return options.map((option) => {
+    const swatchColor = swatchColorsByAppearanceKey[key]?.[option.label];
+    const visual: OptionSelectorOption['visual'] = swatchColor
+      ? { type: 'swatch', color: swatchColor, label: option.label }
+      : { type: 'image', src: option.thumbnailSrc, alt: option.label };
+
+    return {
+      id: option.id,
+      label: option.label,
+      visual
+    };
+  });
+};
+
 export const CharacterCreator = ({
   faction,
   character,
@@ -42,6 +81,22 @@ export const CharacterCreator = ({
   const [currentStep, setCurrentStep] = useState<StepId>('identity');
 
   const clothingOptions = useMemo(() => getClothingOptions(faction.id), [faction.id]);
+
+  const appearanceSelectorOptions = useMemo(() => {
+    const mapped = {} as Record<AppearanceOptionKey, OptionSelectorOption[]>;
+    (Object.keys(appearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
+      mapped[key] = createSelectorOptions(key, appearanceOptions[key]);
+    });
+    return mapped;
+  }, [appearanceOptions]);
+
+  const clothingSelectorOptions = useMemo<OptionSelectorOption[]>(() => {
+    return clothingOptions.map((option) => ({
+      id: option.id,
+      label: option.label,
+      visual: { type: 'image', src: option.thumbnailSrc, alt: option.label }
+    }));
+  }, [clothingOptions]);
 
   const resolveAppearanceLabel = (key: AppearanceOptionKey, id: string) => {
     const options = appearanceOptions[key];
@@ -182,7 +237,7 @@ export const CharacterCreator = ({
                   key={key}
                   label={label}
                   value={character.appearance[key]}
-                  options={appearanceOptions[key]}
+                  options={appearanceSelectorOptions[key]}
                   onSelect={(value) => setAppearanceField(key, value)}
                 />
               ))}
@@ -194,7 +249,7 @@ export const CharacterCreator = ({
               <OptionSelector
                 label="Комплект одежды"
                 value={character.clothing}
-                options={clothingOptions}
+                options={clothingSelectorOptions}
                 onSelect={(value) => setCharacter({ clothing: value })}
               />
             </section>
