@@ -1,26 +1,68 @@
 import type {
   AppearanceOptionKey,
   AppearanceOptionSet,
+  AppearanceVisualOption,
   CharacterAppearance,
   Faction,
   Gender
 } from './types';
 
+const createVisualOptions = (
+  category: string,
+  labels: string[],
+  prefix: string
+): AppearanceVisualOption[] => {
+  return labels.map((label, index) => ({
+    id: `${prefix}-${String(index + 1).padStart(2, '0')}`,
+    label,
+    thumbnailSrc: `/images/appearance/${category}.svg`,
+    layerSrc: `/images/appearance/${category}.svg`
+  }));
+};
+
+const mergeVisualOptionLists = (
+  ...lists: AppearanceVisualOption[][]
+): AppearanceVisualOption[] => {
+  const seen = new Set<string>();
+  const merged: AppearanceVisualOption[] = [];
+  lists.forEach((list) => {
+    list.forEach((option) => {
+      if (!seen.has(option.id)) {
+        seen.add(option.id);
+        merged.push(option);
+      }
+    });
+  });
+  return merged;
+};
+
 const baseAppearanceOptions: AppearanceOptionSet = {
-  hairStyle: [
+  hairStyle: createVisualOptions('hair-style', [
     'Длинные косы',
     'Короткие пряди',
     'Хвост',
     'Распущенные волосы',
     'Уложенные локоны'
-  ],
-  hairColor: ['Светлые', 'Русые', 'Темные', 'Медные', 'Чёрные'],
-  faceShape: ['Овальное', 'Квадратное', 'Треугольное', 'Круглое'],
-  eyeShape: ['Миндалевидные', 'Круглые', 'Узкие'],
-  eyeColor: ['Серые', 'Карие', 'Синие', 'Зелёные', 'Ореховые'],
-  nose: ['Прямой', 'Орлиный', 'Курносый'],
-  lips: ['Тонкие', 'Полные', 'Средние'],
-  accessory: ['Без украшений', 'Торс с амулетом', 'Лобная повязка', 'Серьги', 'Шрам на щеке']
+  ], 'hair-style'),
+  hairColor: createVisualOptions(
+    'hair-color',
+    ['Светлые', 'Русые', 'Темные', 'Медные', 'Чёрные'],
+    'hair-color'
+  ),
+  faceShape: createVisualOptions('face-shape', ['Овальное', 'Квадратное', 'Треугольное', 'Круглое'], 'face-shape'),
+  eyeShape: createVisualOptions('eye-shape', ['Миндалевидные', 'Круглые', 'Узкие'], 'eye-shape'),
+  eyeColor: createVisualOptions(
+    'eye-color',
+    ['Серые', 'Карие', 'Синие', 'Зелёные', 'Ореховые'],
+    'eye-color'
+  ),
+  nose: createVisualOptions('nose', ['Прямой', 'Орлиный', 'Курносый'], 'nose'),
+  lips: createVisualOptions('lips', ['Тонкие', 'Полные', 'Средние'], 'lips'),
+  accessory: createVisualOptions(
+    'accessory',
+    ['Без украшений', 'Торс с амулетом', 'Лобная повязка', 'Серьги', 'Шрам на щеке'],
+    'accessory'
+  )
 };
 
 const factionsData: Faction[] = [
@@ -39,13 +81,25 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Рюрик', 'Игорь', 'Олег', 'Трувор', 'Гельмонд'],
     femaleNames: ['Ольга', 'Рогнеда', 'Инга', 'Сигрид', 'Хельга'],
-    baseClothing: ['Меховой плащ', 'Льняной кафтан', 'Кожаная куртка'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Меховой плащ', 'Льняной кафтан', 'Кожаная куртка'],
+      'varyagi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        hairColor: ['Пшеничные', 'Пепельные', 'Рыжие'],
-        accessory: ['Рунный амулет', 'Меховой ворот', 'Кольчуга']
+        hairColor: createVisualOptions('hair-color', ['Пшеничные', 'Пепельные', 'Рыжие'], 'varyagi-hair-color'),
+        accessory: createVisualOptions(
+          'accessory',
+          ['Рунный амулет', 'Меховой ворот', 'Кольчуга'],
+          'varyagi-accessory'
+        )
       },
-      clothing: ['Кольчужный доспех', 'Плащ с фибулой']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Кольчужный доспех', 'Плащ с фибулой'],
+        'varyagi-clothing-extra'
+      )
     }
   },
   {
@@ -63,13 +117,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Вайде', 'Главис', 'Довспрунк', 'Ромовид', 'Судовит'],
     femaleNames: ['Видарна', 'Глобе', 'Милда', 'Девина', 'Вайделотка'],
-    baseClothing: ['Тканый плащ', 'Короткий жупан', 'Плетёная безрукавка'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Тканый плащ', 'Короткий жупан', 'Плетёная безрукавка'],
+      'prusy-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        hairStyle: ['Заплетённые косы', 'Полувоздушные локоны'],
-        accessory: ['Янтарное ожерелье', 'Головная лента']
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённые косы', 'Полувоздушные локоны'],
+          'prusy-hair-style'
+        ),
+        accessory: createVisualOptions(
+          'accessory',
+          ['Янтарное ожерелье', 'Головная лента'],
+          'prusy-accessory'
+        )
       },
-      clothing: ['Янтарный плащ', 'Жупан с вышивкой']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Янтарный плащ', 'Жупан с вышивкой'],
+        'prusy-clothing-extra'
+      )
     }
   },
   {
@@ -86,13 +156,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Миндаугас', 'Витаутас', 'Таутис', 'Жигимантас', 'Лауринас'],
     femaleNames: ['Аустея', 'Юрате', 'Гражина', 'Даиня', 'Рута'],
-    baseClothing: ['Льняная туника', 'Пояс с орнаментом'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Льняная туника', 'Пояс с орнаментом'],
+      'zemaites-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Венок из трав', 'Орнаментированный пояс'],
-        hairStyle: ['Заплетённая корона', 'Свободные волны']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Венок из трав', 'Орнаментированный пояс'],
+          'zemaites-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённая корона', 'Свободные волны'],
+          'zemaites-hair-style'
+        )
       },
-      clothing: ['Плащ с этническим узором']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Плащ с этническим узором'],
+        'zemaites-clothing-extra'
+      )
     }
   },
   {
@@ -110,13 +196,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Ламес', 'Имантс', 'Вилис', 'Гинтс', 'Осис'],
     femaleNames: ['Лайма', 'Гуна', 'Даце', 'Мара', 'Агнесе'],
-    baseClothing: ['Морской плащ', 'Плотная куртка'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Морской плащ', 'Плотная куртка'],
+      'kurshi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Морской амулет', 'Торговая сумка'],
-        hairStyle: ['Подбритые виски', 'Длинная челка']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Морской амулет', 'Торговая сумка'],
+          'kurshi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Подбритые виски', 'Длинная челка'],
+          'kurshi-hair-style'
+        )
       },
-      clothing: ['Плащ с меховой отделкой', 'Кожаный пояс с подвесками']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Плащ с меховой отделкой', 'Кожаный пояс с подвесками'],
+        'kurshi-clothing-extra'
+      )
     }
   },
   {
@@ -134,12 +236,24 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Райтис', 'Эдвинс', 'Артурс', 'Янис', 'Алдис'],
     femaleNames: ['Илзе', 'Лигита', 'Марис', 'Анете', 'Дайга'],
-    baseClothing: ['Полотняная рубаха', 'Льняной сарафан'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Полотняная рубаха', 'Льняной сарафан'],
+      'latgaly-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Бисерная гирлянда', 'Тканый головной убор']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Бисерная гирлянда', 'Тканый головной убор'],
+          'latgaly-accessory'
+        )
       },
-      clothing: ['Жемчужная накидка']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Жемчужная накидка'],
+        'latgaly-clothing-extra'
+      )
     }
   },
   {
@@ -157,13 +271,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Скуманд', 'Кумед', 'Сирпутис', 'Войшелк', 'Гинтарас'],
     femaleNames: ['Бируте', 'Судина', 'Мильда', 'Аушра', 'Иева'],
-    baseClothing: ['Боевой плащ', 'Кожаная броня'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Боевой плащ', 'Кожаная броня'],
+      'yotvingi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Боевые краски', 'Защитный браслет'],
-        hairStyle: ['Заплетённый гребень', 'Высокий пучок']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Боевые краски', 'Защитный браслет'],
+          'yotvingi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённый гребень', 'Высокий пучок'],
+          'yotvingi-hair-style'
+        )
       },
-      clothing: ['Кожаный нагрудник', 'Шерстяной плащ']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Кожаный нагрудник', 'Шерстяной плащ'],
+        'yotvingi-clothing-extra'
+      )
     }
   },
   {
@@ -181,13 +311,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Святослав', 'Владимир', 'Ярополк', 'Борис', 'Всеволод'],
     femaleNames: ['Малуша', 'Ярослава', 'Предслава', 'Добромила', 'Любавка'],
-    baseClothing: ['Вышитая рубаха', 'Плащ с фибулой', 'Поясная перевязь'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Вышитая рубаха', 'Плащ с фибулой', 'Поясная перевязь'],
+      'polyane-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Серебряное кольцо', 'Кийский амулет'],
-        hairStyle: ['Кичка с лентами', 'Плетёная коса с подвесками']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Серебряное кольцо', 'Кийский амулет'],
+          'polyane-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Кичка с лентами', 'Плетёная коса с подвесками'],
+          'polyane-hair-style'
+        )
       },
-      clothing: ['Парчовый плащ', 'Льняной сарафан']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Парчовый плащ', 'Льняной сарафан'],
+        'polyane-clothing-extra'
+      )
     }
   },
   {
@@ -205,13 +351,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Мешко', 'Казимир', 'Болеслав', 'Лешек', 'Пшемыслав'],
     femaleNames: ['Данута', 'Ядвига', 'Ванда', 'Бронислава', 'Станислава'],
-    baseClothing: ['Суконный жупан', 'Поясная плащаница'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Суконный жупан', 'Поясная плащаница'],
+      'lyakhi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Орлиная брошь', 'Россыпь бус'],
-        hairStyle: ['Оплетённый венец', 'Высокий чепец']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Орлиная брошь', 'Россыпь бус'],
+          'lyakhi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Оплетённый венец', 'Высокий чепец'],
+          'lyakhi-hair-style'
+        )
       },
-      clothing: ['Жупан с гербовой вышивкой', 'Плащ с меховой опушкой']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Жупан с гербовой вышивкой', 'Плащ с меховой опушкой'],
+        'lyakhi-clothing-extra'
+      )
     }
   },
   {
@@ -229,13 +391,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Константин', 'Никифор', 'Андроник', 'Феодор', 'Мануил'],
     femaleNames: ['Анна', 'Ирина', 'Феофания', 'Зоя', 'Евдокия'],
-    baseClothing: ['Хитон', 'Плащ-хламида', 'Золототканый пояс'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Хитон', 'Плащ-хламида', 'Золототканый пояс'],
+      'greki-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Иконический кулон', 'Золотая диадема'],
-        hairStyle: ['Кудри с лентами', 'Уложенные локоны']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Иконический кулон', 'Золотая диадема'],
+          'greki-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Кудри с лентами', 'Уложенные локоны'],
+          'greki-hair-style'
+        )
       },
-      clothing: ['Пурпурный гиматий', 'Парадный кафтан']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Пурпурный гиматий', 'Парадный кафтан'],
+        'greki-clothing-extra'
+      )
     }
   },
   {
@@ -253,13 +431,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Аспарух', 'Тервел', 'Крум', 'Омуртаг', 'Борис'],
     femaleNames: ['Севина', 'Пламена', 'Елена', 'Дара', 'Златина'],
-    baseClothing: ['Льняной кафтан', 'Воинский ламеллярный доспех'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Льняной кафтан', 'Воинский ламеллярный доспех'],
+      'danube-bulgars-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Тюркский амулет', 'Шлем с маской'],
-        hairStyle: ['Подбритый затылок', 'Косичка-оселедец']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Тюркский амулет', 'Шлем с маской'],
+          'danube-bulgars-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Подбритый затылок', 'Косичка-оселедец'],
+          'danube-bulgars-hair-style'
+        )
       },
-      clothing: ['Кожаный доспех', 'Парадный плащ царя']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Кожаный доспех', 'Парадный плащ царя'],
+        'danube-bulgars-clothing-extra'
+      )
     }
   },
   {
@@ -277,13 +471,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Булан', 'Ханук', 'Сабриель', 'Менамер', 'Обадия'],
     femaleNames: ['Серах', 'Дебора', 'Рахиль', 'Мириам', 'Адела'],
-    baseClothing: ['Шёлковый кафтан', 'Куртка с лампасами'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Шёлковый кафтан', 'Куртка с лампасами'],
+      'khazary-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Степной тюрбан', 'Торговый талар'],
-        hairStyle: ['Заплетённые виски', 'Собранный пучок']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Степной тюрбан', 'Торговый талар'],
+          'khazary-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённые виски', 'Собранный пучок'],
+          'khazary-hair-style'
+        )
       },
-      clothing: ['Золотошвейный плащ', 'Степная броня']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Золотошвейный плащ', 'Степная броня'],
+        'khazary-clothing-extra'
+      )
     }
   },
   {
@@ -301,13 +511,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Алмуш', 'Габдулла', 'Илдар', 'Айдар', 'Самат'],
     femaleNames: ['Булгара', 'Алсу', 'Гульнара', 'Лейла', 'Земфира'],
-    baseClothing: ['Тюбетейка', 'Вышитый камзол'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Тюбетейка', 'Вышитый камзол'],
+      'volga-bulgars-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Лунный амулет', 'Зернь на висках'],
-        hairStyle: ['Коса с монетами', 'Уложенный тюрбан']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Лунный амулет', 'Зернь на висках'],
+          'volga-bulgars-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Коса с монетами', 'Уложенный тюрбан'],
+          'volga-bulgars-hair-style'
+        )
       },
-      clothing: ['Парчовый камзол', 'Короткий бешмет']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Парчовый камзол', 'Короткий бешмет'],
+        'volga-bulgars-clothing-extra'
+      )
     }
   },
   {
@@ -325,13 +551,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Куря', 'Илдек', 'Гелу', 'Сары', 'Байдар'],
     femaleNames: ['Алтун', 'Йылдыз', 'Тумар', 'Айнура', 'Бозай'],
-    baseClothing: ['Степной кафтан', 'Меховой тулуп'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Степной кафтан', 'Меховой тулуп'],
+      'pechenegi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Колчан с орнаментом', 'Степная подвеска'],
-        hairStyle: ['Заплетённая гривка', 'Свисающие косы']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Колчан с орнаментом', 'Степная подвеска'],
+          'pechenegi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённая гривка', 'Свисающие косы'],
+          'pechenegi-hair-style'
+        )
       },
-      clothing: ['Шкурный плащ', 'Кожаный панцирь']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Шкурный плащ', 'Кожаный панцирь'],
+        'pechenegi-clothing-extra'
+      )
     }
   },
   {
@@ -349,13 +591,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Атрак', 'Балык', 'Аяз', 'Карач', 'Торкун'],
     femaleNames: ['Айша', 'Сауле', 'Тюльпан', 'Гайша', 'Казына'],
-    baseClothing: ['Кольчужная рубаха', 'Куртка из сафьяна'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Кольчужная рубаха', 'Куртка из сафьяна'],
+      'torki-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Наёмничий знак', 'Кистень на поясе'],
-        hairStyle: ['Подбритая макушка', 'Заплетённый хвост']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Наёмничий знак', 'Кистень на поясе'],
+          'torki-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Подбритая макушка', 'Заплетённый хвост'],
+          'torki-hair-style'
+        )
       },
-      clothing: ['Кольчуга с пластинами', 'Шапка с меховой околышкой']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Кольчуга с пластинами', 'Шапка с меховой околышкой'],
+        'torki-clothing-extra'
+      )
     }
   },
   {
@@ -373,13 +631,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Кончак', 'Тугоркан', 'Сулей', 'Боняк', 'Отрок'],
     femaleNames: ['Сарыклы', 'Айкыз', 'Томирис', 'Кызай', 'Наргиз'],
-    baseClothing: ['Степная чепрага', 'Куртка из войлока'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Степная чепрага', 'Куртка из войлока'],
+      'kumany-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Туранский амулет', 'Птичье перо'],
-        hairStyle: ['Свободные косы', 'Подбритый висок']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Туранский амулет', 'Птичье перо'],
+          'kumany-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Свободные косы', 'Подбритый висок'],
+          'kumany-hair-style'
+        )
       },
-      clothing: ['Лёгкий ламеллярный доспех', 'Праздничный камзол']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Лёгкий ламеллярный доспех', 'Праздничный камзол'],
+        'kumany-clothing-extra'
+      )
     }
   },
   {
@@ -397,13 +671,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Тарвас', 'Яакко', 'Урмас', 'Илмар', 'Лаури'],
     femaleNames: ['Айну', 'Кайса', 'Лийза', 'Туула', 'Хелена'],
-    baseClothing: ['Шерстяная накидка', 'Орнаментированный сарафан'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Шерстяная накидка', 'Орнаментированный сарафан'],
+      'chud-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Серебряные фибулы', 'Берестяной амулет'],
-        hairStyle: ['Коса с лентами', 'Уложенный венец']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Серебряные фибулы', 'Берестяной амулет'],
+          'chud-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Коса с лентами', 'Уложенный венец'],
+          'chud-hair-style'
+        )
       },
-      clothing: ['Праздничный костюм с бисером', 'Шерстяной плащ']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный костюм с бисером', 'Шерстяной плащ'],
+        'chud-clothing-extra'
+      )
     }
   },
   {
@@ -421,13 +711,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Тороп', 'Атяр', 'Саво', 'Юхо', 'Ияр'],
     femaleNames: ['Ава', 'Сайна', 'Лийса', 'Марина', 'Окса'],
-    baseClothing: ['Длинная понёва', 'Берестяной плащ'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Длинная понёва', 'Берестяной плащ'],
+      'merya-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Волнистое ожерелье', 'Речной амулет'],
-        hairStyle: ['Разделённая коса', 'Низкий узел']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Волнистое ожерелье', 'Речной амулет'],
+          'merya-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Разделённая коса', 'Низкий узел'],
+          'merya-hair-style'
+        )
       },
-      clothing: ['Северный плат', 'Вышитая рубаха с бисером']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Северный плат', 'Вышитая рубаха с бисером'],
+        'merya-clothing-extra'
+      )
     }
   },
   {
@@ -445,13 +751,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Унти', 'Сийми', 'Олав', 'Тойво', 'Тари'],
     femaleNames: ['Сийна', 'Туули', 'Пирко', 'Майя', 'Кайса'],
-    baseClothing: ['Меховая парка', 'Тёплая понёва'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Меховая парка', 'Тёплая понёва'],
+      'ves-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Бубенцы на поясе', 'Плетёная тесьма'],
-        hairStyle: ['Подпоясанные косы', 'Закрученные пучки']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Бубенцы на поясе', 'Плетёная тесьма'],
+          'ves-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Подпоясанные косы', 'Закрученные пучки'],
+          'ves-hair-style'
+        )
       },
-      clothing: ['Праздничная малица', 'Лесной плащ']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничная малица', 'Лесной плащ'],
+        'ves-clothing-extra'
+      )
     }
   },
   {
@@ -469,13 +791,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Олеш', 'Сергий', 'Анзий', 'Мирон', 'Торвальд'],
     femaleNames: ['Акулина', 'Марица', 'Илона', 'Василиса', 'Ольда'],
-    baseClothing: ['Льняной сарафан', 'Тёплый каптан'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Льняной сарафан', 'Тёплый каптан'],
+      'muroma-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Речной талисман', 'Вышитый обруч'],
-        hairStyle: ['Плетёный венец', 'Свободная волна']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Речной талисман', 'Вышитый обруч'],
+          'muroma-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Плетёный венец', 'Свободная волна'],
+          'muroma-hair-style'
+        )
       },
-      clothing: ['Праздничная понёва', 'Окольный плащ']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничная понёва', 'Окольный плащ'],
+        'muroma-clothing-extra'
+      )
     }
   },
   {
@@ -493,13 +831,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Микулай', 'Яром', 'Пама', 'Егма', 'Онни'],
     femaleNames: ['Ашка', 'Майа', 'Лани', 'Таня', 'Параска'],
-    baseClothing: ['Меховой зипун', 'Орнаментированный кафтан'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Меховой зипун', 'Орнаментированный кафтан'],
+      'perm-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Медный оберег', 'Пояс с подвесками'],
-        hairStyle: ['Уложенные косы под кокошник', 'Северный обруч']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Медный оберег', 'Пояс с подвесками'],
+          'perm-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Уложенные косы под кокошник', 'Северный обруч'],
+          'perm-hair-style'
+        )
       },
-      clothing: ['Праздничный сарафан', 'Шкура северного зверя']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный сарафан', 'Шкура северного зверя'],
+        'perm-clothing-extra'
+      )
     }
   },
   {
@@ -517,13 +871,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Пётр', 'Илья', 'Кан', 'Юрий', 'Мику'],
     femaleNames: ['Нев', 'Юла', 'Сима', 'Пелысь', 'Рая'],
-    baseClothing: ['Парка с орнаментом', 'Тёплый пояс'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Парка с орнаментом', 'Тёплый пояс'],
+      'komi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Берестяная диадема', 'Северные серьги'],
-        hairStyle: ['Коса с лентой', 'Пучок под повойник']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Берестяная диадема', 'Северные серьги'],
+          'komi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Коса с лентой', 'Пучок под повойник'],
+          'komi-hair-style'
+        )
       },
-      clothing: ['Праздничный панар', 'Узорчатая безрукавка']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный панар', 'Узорчатая безрукавка'],
+        'komi-clothing-extra'
+      )
     }
   },
   {
@@ -541,13 +911,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Антти', 'Лемми', 'Тапио', 'Вяйне', 'Юкка'],
     femaleNames: ['Айно', 'Марья', 'Лайма', 'Кайса', 'Синикка'],
-    baseClothing: ['Оленья накидка', 'Валеная куртка'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Оленья накидка', 'Валеная куртка'],
+      'karely-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Гусли на ремне', 'Берёзовая подвеска'],
-        hairStyle: ['Свободные косы', 'Плетёный венок']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Гусли на ремне', 'Берёзовая подвеска'],
+          'karely-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Свободные косы', 'Плетёный венок'],
+          'karely-hair-style'
+        )
       },
-      clothing: ['Праздничный костюм Калевалы', 'Тёплый плащ с вышивкой']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный костюм Калевалы', 'Тёплый плащ с вышивкой'],
+        'karely-clothing-extra'
+      )
     }
   },
   {
@@ -565,13 +951,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Исаак', 'Давид', 'Яков', 'Самуил', 'Ханан'],
     femaleNames: ['Сара', 'Ривка', 'Лея', 'Эстер', 'Хава'],
-    baseClothing: ['Мантия с талитом', 'Тканый кафтан'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Мантия с талитом', 'Тканый кафтан'],
+      'iudei-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Кипа', 'Мешочек с мезузой'],
-        hairStyle: ['Пейсы и кудри', 'Собранный платок']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Кипа', 'Мешочек с мезузой'],
+          'iudei-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Пейсы и кудри', 'Собранный платок'],
+          'iudei-hair-style'
+        )
       },
-      clothing: ['Праздничный талес', 'Купеческая накидка']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный талес', 'Купеческая накидка'],
+        'iudei-clothing-extra'
+      )
     }
   },
   {
@@ -589,13 +991,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Черниг', 'Олбег', 'Бран', 'Мал', 'Лют'],
     femaleNames: ['Милолика', 'Янка', 'Славина', 'Рогнеда', 'Веста'],
-    baseClothing: ['Льняная рубаха', 'Пояс с пряжкой'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Льняная рубаха', 'Пояс с пряжкой'],
+      'siveriane-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Берестяная коробочка', 'Венок из дубовых листьев'],
-        hairStyle: ['Две косы через плечо', 'Кокошник с лентами']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Берестяная коробочка', 'Венок из дубовых листьев'],
+          'siveriane-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Две косы через плечо', 'Кокошник с лентами'],
+          'siveriane-hair-style'
+        )
       },
-      clothing: ['Плащ с орнаментом', 'Тёплая свита']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Плащ с орнаментом', 'Тёплая свита'],
+        'siveriane-clothing-extra'
+      )
     }
   },
   {
@@ -613,13 +1031,29 @@ const factionsData: Faction[] = [
     ],
     maleNames: ['Радим', 'Волод', 'Стемид', 'Грудо', 'Людомир'],
     femaleNames: ['Милана', 'Белослава', 'Радмила', 'Владена', 'Любава'],
-    baseClothing: ['Вышитая понёва', 'Льняной плащ'],
+    baseClothing: createVisualOptions(
+      'clothing',
+      ['Вышитая понёва', 'Льняной плащ'],
+      'radimichi-clothing'
+    ),
     optionsExtension: {
       appearance: {
-        accessory: ['Янтарные бусы', 'Поясная сумка'],
-        hairStyle: ['Заплетённые венки', 'Свободные локоны']
+        accessory: createVisualOptions(
+          'accessory',
+          ['Янтарные бусы', 'Поясная сумка'],
+          'radimichi-accessory'
+        ),
+        hairStyle: createVisualOptions(
+          'hair-style',
+          ['Заплетённые венки', 'Свободные локоны'],
+          'radimichi-hair-style'
+        )
       },
-      clothing: ['Праздничный сарафан', 'Плащ с гербом рода']
+      clothing: createVisualOptions(
+        'clothing',
+        ['Праздничный сарафан', 'Плащ с гербом рода'],
+        'radimichi-clothing-extra'
+      )
     }
   }
 ];
@@ -628,46 +1062,44 @@ export const factions = factionsData;
 
 export const getAppearanceOptions = (factionId: string): AppearanceOptionSet => {
   const faction = factions.find((item) => item.id === factionId);
-  if (!faction) {
-    return baseAppearanceOptions;
-  }
+  const merged: AppearanceOptionSet = {} as AppearanceOptionSet;
 
-  const merged: AppearanceOptionSet = { ...baseAppearanceOptions };
-
-  if (faction.optionsExtension?.appearance) {
-    (Object.keys(faction.optionsExtension.appearance) as AppearanceOptionKey[]).forEach((key) => {
-      const extra = faction.optionsExtension?.appearance?.[key] ?? [];
-      const base = baseAppearanceOptions[key];
-      merged[key] = Array.from(new Set([...base, ...extra]));
-    });
-  }
+  (Object.keys(baseAppearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
+    const base = baseAppearanceOptions[key];
+    const extra = faction?.optionsExtension?.appearance?.[key] ?? [];
+    merged[key] = mergeVisualOptionLists(base, extra);
+  });
 
   return merged;
 };
 
-export const getClothingOptions = (factionId: string): string[] => {
+const baseClothingOptions = createVisualOptions(
+  'clothing',
+  ['Базовая туника', 'Путевой плащ', 'Учебная броня'],
+  'clothing-base'
+);
+
+export const getClothingOptions = (factionId: string): AppearanceVisualOption[] => {
   const faction = factions.find((item) => item.id === factionId);
   if (!faction) {
     return baseClothingOptions;
   }
 
   const extras = faction.optionsExtension?.clothing ?? [];
-  return Array.from(new Set([...faction.baseClothing, ...extras, ...baseClothingOptions]));
+  return mergeVisualOptionLists(faction.baseClothing, extras, baseClothingOptions);
 };
-
-const baseClothingOptions = ['Базовая туника', 'Путевой плащ', 'Учебная броня'];
 
 export const getInitialAppearance = (factionId: string): CharacterAppearance => {
   const options = getAppearanceOptions(factionId);
   return {
-    hairStyle: options.hairStyle[0],
-    hairColor: options.hairColor[0],
-    faceShape: options.faceShape[0],
-    eyeShape: options.eyeShape[0],
-    eyeColor: options.eyeColor[0],
-    nose: options.nose[0],
-    lips: options.lips[0],
-    accessory: options.accessory[0]
+    hairStyle: options.hairStyle[0]?.id ?? '',
+    hairColor: options.hairColor[0]?.id ?? '',
+    faceShape: options.faceShape[0]?.id ?? '',
+    eyeShape: options.eyeShape[0]?.id ?? '',
+    eyeColor: options.eyeColor[0]?.id ?? '',
+    nose: options.nose[0]?.id ?? '',
+    lips: options.lips[0]?.id ?? '',
+    accessory: options.accessory[0]?.id ?? ''
   };
 };
 

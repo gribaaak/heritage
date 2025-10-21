@@ -9,7 +9,7 @@ interface FactionSelectionProps {
 export const FactionSelection = ({ factions, onSelectFaction }: FactionSelectionProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement | null>(null);
-  const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
+  const slidesRef = useRef<(HTMLElement | null)[]>([]);
 
   const safeActiveIndex = useMemo(() => {
     if (activeIndex < 0) {
