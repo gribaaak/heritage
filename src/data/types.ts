@@ -33,6 +33,8 @@ export interface Faction {
   description: string;
   modernEquivalent: string;
   avatarEmoji: string;
+  portraitSrc: string;
+  traits: string[];
   maleNames: string[];
   femaleNames: string[];
   baseClothing: string[];
