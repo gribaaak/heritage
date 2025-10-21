@@ -421,23 +421,77 @@ button {
 
 .option-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
 }
 
 .option-card {
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 16px;
+  border: 1.5px solid rgba(148, 163, 184, 0.45);
   background: #f8fafc;
-  padding: 0.75rem;
-  text-align: center;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
   color: #334155;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
-.option-card.active {
+.option-card:hover {
+  border-color: rgba(79, 70, 229, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 14px rgba(15, 23, 42, 0.12);
+}
+
+.option-card:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.55);
+  outline-offset: 2px;
+}
+
+.option-card--active {
   border-color: #4f46e5;
   background: #eef2ff;
   color: #312e81;
+  box-shadow: 0 12px 22px rgba(79, 70, 229, 0.18);
+}
+
+.option-card-media {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.9), rgba(226, 232, 240, 0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.option-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.option-card-swatch {
+  width: 70%;
+  height: 70%;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  display: block;
+}
+
+.option-card--active .option-card-media {
+  box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.35);
+}
+
+.option-card-label {
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .creator-column--preview {
