@@ -19,6 +19,44 @@ const getPreviewAccent = (factionId: string) => {
       return '#9c661f';
     case 'yotvingi':
       return '#5b2c6f';
+    case 'polyane':
+      return '#7c4d1f';
+    case 'lyakhi':
+      return '#b22222';
+    case 'greki':
+      return '#2f4f90';
+    case 'danube_bulgars':
+      return '#556b2f';
+    case 'khazary':
+      return '#c49b3a';
+    case 'volga_bulgars':
+      return '#8b4513';
+    case 'pechenegi':
+      return '#a0522d';
+    case 'torki':
+      return '#8b0000';
+    case 'kumany':
+      return '#daa520';
+    case 'chud':
+      return '#2e8b57';
+    case 'merya':
+      return '#4682b4';
+    case 'ves':
+      return '#87ceeb';
+    case 'muroma':
+      return '#6b8e23';
+    case 'perm':
+      return '#556270';
+    case 'komi':
+      return '#1c7c7d';
+    case 'karely':
+      return '#2a4d69';
+    case 'iudei':
+      return '#4b0082';
+    case 'siveriane':
+      return '#8f6f2f';
+    case 'radimichi':
+      return '#c65d7b';
     default:
       return '#3f3f3f';
   }
