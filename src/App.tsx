@@ -4,12 +4,18 @@ import { CharacterCreator } from './components/CharacterCreator';
 import { FactionSelection } from './components/FactionSelection';
 import type { CharacterState, Faction } from './data/types';
 
-const createDefaultCharacter = (faction: Faction): CharacterState => ({
-  name: '',
-  gender: 'male',
-  appearance: getInitialAppearance(faction.id),
-  clothing: getClothingOptions(faction.id)[0]?.id ?? ''
-});
+const createDefaultCharacter = (faction: Faction): CharacterState => {
+  const clothingOptions = getClothingOptions(faction.id);
+  const firstClothing = clothingOptions[0] ?? null;
+
+  return {
+    name: '',
+    gender: 'male',
+    appearance: getInitialAppearance(faction.id),
+    clothing: firstClothing?.id ?? '',
+    clothingTransform: firstClothing ? { ...firstClothing.defaultTransform } : undefined
+  };
+};
 
 function App() {
   const [selectedFactionId, setSelectedFactionId] = useState<string | null>(null);

@@ -2,8 +2,15 @@ import { useMemo, useState } from 'react';
 import { CharacterPreview } from './CharacterPreview';
 import { StepControls } from './StepControls';
 import { OptionSelector } from './OptionSelector';
-import type { OptionSelectorOption } from './OptionSelector';
-import type { AppearanceOptionKey, AppearanceOptionSet, CharacterState, Faction } from '../data/types';
+import type { OptionSelectorGroup, OptionSelectorOption } from './OptionSelector';
+import type {
+  AppearanceLayer,
+  AppearanceOptionKey,
+  AppearanceOptionSet,
+  CharacterState,
+  Faction,
+  LayerTransform
+} from '../data/types';
 import { createAppearanceLayer, getAppearanceOptions, getClothingOptions, getRandomFromArray, getRandomName } from '../data/factions';
 
 interface CharacterCreatorProps {
@@ -71,6 +78,18 @@ const createSelectorOptions = (
   });
 };
 
+const createOptionGroups = (
+  key: AppearanceOptionKey,
+  options: AppearanceOptionSet[AppearanceOptionKey]
+): OptionSelectorGroup[] => {
+  return [
+    {
+      id: key,
+      options: createSelectorOptions(key, options)
+    }
+  ];
+};
+
 export const CharacterCreator = ({
   faction,
   character,
@@ -83,19 +102,24 @@ export const CharacterCreator = ({
   const clothingOptions = useMemo(() => getClothingOptions(faction.id), [faction.id]);
 
   const appearanceSelectorOptions = useMemo(() => {
-    const mapped = {} as Record<AppearanceOptionKey, OptionSelectorOption[]>;
+    const mapped = {} as Record<AppearanceOptionKey, OptionSelectorGroup[]>;
     (Object.keys(appearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
-      mapped[key] = createSelectorOptions(key, appearanceOptions[key]);
+      mapped[key] = createOptionGroups(key, appearanceOptions[key]);
     });
     return mapped;
   }, [appearanceOptions]);
 
-  const clothingSelectorOptions = useMemo<OptionSelectorOption[]>(() => {
-    return clothingOptions.map((option) => ({
-      id: option.id,
-      label: option.label,
-      visual: { type: 'image', src: option.thumbnailSrc, alt: option.label }
-    }));
+  const clothingSelectorGroups = useMemo<OptionSelectorGroup[]>(() => {
+    return [
+      {
+        id: 'clothing',
+        options: clothingOptions.map((option) => ({
+          id: option.id,
+          label: option.label,
+          visual: { type: 'image', src: option.thumbnailSrc, alt: option.label }
+        }))
+      }
+    ];
   }, [clothingOptions]);
 
   const resolveAppearanceLabel = (key: AppearanceOptionKey, layer: CharacterState['appearance'][AppearanceOptionKey]) => {
@@ -126,6 +150,79 @@ export const CharacterCreator = ({
     });
   };
 
+  const findAppearanceEntryByLayerId = (
+    layerId: string
+  ): [AppearanceOptionKey, AppearanceLayer] | null => {
+    const entries = Object.entries(character.appearance) as [
+      AppearanceOptionKey,
+      AppearanceLayer | null
+    ][];
+    for (const [appearanceKey, layer] of entries) {
+      if (layer && layer.optionId === layerId) {
+        return [appearanceKey, layer];
+      }
+    }
+    return null;
+  };
+
+  const handleUpdateLayerTransform = (layerId: string, transform: LayerTransform) => {
+    const appearanceEntry = findAppearanceEntryByLayerId(layerId);
+    if (appearanceEntry) {
+      const [appearanceKey, layer] = appearanceEntry;
+      onChange({
+        ...character,
+        appearance: {
+          ...character.appearance,
+          [appearanceKey]: {
+            ...layer,
+            transform: { ...transform }
+          }
+        }
+      });
+      return;
+    }
+
+    if (character.clothing === layerId) {
+      onChange({
+        ...character,
+        clothingTransform: { ...transform }
+      });
+    }
+  };
+
+  const handleResetLayerTransform = (layerId: string) => {
+    const appearanceEntry = findAppearanceEntryByLayerId(layerId);
+    if (appearanceEntry) {
+      const [appearanceKey, layer] = appearanceEntry;
+      const option = appearanceOptions[appearanceKey].find((item) => item.id === layerId);
+      if (!option) {
+        return;
+      }
+      onChange({
+        ...character,
+        appearance: {
+          ...character.appearance,
+          [appearanceKey]: {
+            ...layer,
+            transform: { ...option.defaultTransform }
+          }
+        }
+      });
+      return;
+    }
+
+    if (character.clothing === layerId) {
+      const option = clothingOptions.find((item) => item.id === layerId);
+      if (!option) {
+        return;
+      }
+      onChange({
+        ...character,
+        clothingTransform: { ...option.defaultTransform }
+      });
+    }
+  };
+
   const handleRandomizeStep = () => {
     switch (currentStep) {
       case 'identity': {
@@ -151,7 +248,14 @@ export const CharacterCreator = ({
         break;
       }
       case 'outfit': {
-        setCharacter({ clothing: getRandomFromArray(clothingOptions).id });
+        if (clothingOptions.length === 0) {
+          break;
+        }
+        const randomClothing = getRandomFromArray(clothingOptions);
+        setCharacter({
+          clothing: randomClothing.id,
+          clothingTransform: { ...randomClothing.defaultTransform }
+        });
         break;
       }
     }
@@ -166,13 +270,24 @@ export const CharacterCreator = ({
       randomizedAppearance[key] = pool.length > 0 ? createAppearanceLayer(getRandomFromArray(pool)) : null;
     });
 
-    const randomClothing = clothingOptions.length > 0 ? getRandomFromArray(clothingOptions).id : character.clothing;
+    const randomClothingOption = clothingOptions.length > 0 ? getRandomFromArray(clothingOptions) : null;
 
     onChange({
       ...character,
       name: getRandomName(faction, gender),
       appearance: randomizedAppearance,
-      clothing: randomClothing
+      clothing: randomClothingOption?.id ?? character.clothing,
+      clothingTransform: randomClothingOption
+        ? { ...randomClothingOption.defaultTransform }
+        : character.clothingTransform
+    });
+  };
+
+  const handleSelectClothing = (value: string) => {
+    const option = clothingOptions.find((item) => item.id === value) ?? null;
+    setCharacter({
+      clothing: value,
+      clothingTransform: option ? { ...option.defaultTransform } : undefined
     });
   };
 
@@ -250,7 +365,7 @@ export const CharacterCreator = ({
                   key={key}
                   label={label}
                   value={character.appearance[key]?.optionId ?? ''}
-                  options={appearanceSelectorOptions[key]}
+                  groups={appearanceSelectorOptions[key]}
                   onSelect={(value) => setAppearanceField(key, value)}
                 />
               ))}
@@ -262,8 +377,8 @@ export const CharacterCreator = ({
               <OptionSelector
                 label="Комплект одежды"
                 value={character.clothing}
-                options={clothingSelectorOptions}
-                onSelect={(value) => setCharacter({ clothing: value })}
+                groups={clothingSelectorGroups}
+                onSelect={handleSelectClothing}
               />
             </section>
           )}
@@ -276,6 +391,8 @@ export const CharacterCreator = ({
           character={character}
           appearanceOptions={appearanceOptions}
           clothingOptions={clothingOptions}
+          onChangeLayerTransform={handleUpdateLayerTransform}
+          onResetLayerTransform={handleResetLayerTransform}
         />
         <div className="summary-card">
           <h3>Хроника героя</h3>

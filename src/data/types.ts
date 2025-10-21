@@ -42,6 +42,7 @@ export interface CharacterState {
   gender: Gender;
   appearance: CharacterAppearance;
   clothing: string;
+  clothingTransform?: LayerTransform;
 }
 
 export interface FactionOptionsExtension {
