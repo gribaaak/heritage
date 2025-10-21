@@ -1,5 +1,12 @@
 export type Gender = 'male' | 'female';
 
+export interface AppearanceVisualOption {
+  id: string;
+  label: string;
+  thumbnailSrc: string;
+  layerSrc?: string;
+}
+
 export interface CharacterAppearance {
   hairStyle: string;
   hairColor: string;
@@ -20,11 +27,11 @@ export interface CharacterState {
 
 export type AppearanceOptionKey = keyof CharacterAppearance;
 
-export type AppearanceOptionSet = Record<AppearanceOptionKey, string[]>;
+export type AppearanceOptionSet = Record<AppearanceOptionKey, AppearanceVisualOption[]>;
 
 export interface FactionOptionsExtension {
-  appearance?: Partial<Record<AppearanceOptionKey, string[]>>;
-  clothing?: string[];
+  appearance?: Partial<Record<AppearanceOptionKey, AppearanceVisualOption[]>>;
+  clothing?: AppearanceVisualOption[];
 }
 
 export interface Faction {
@@ -37,6 +44,6 @@ export interface Faction {
   traits: string[];
   maleNames: string[];
   femaleNames: string[];
-  baseClothing: string[];
+  baseClothing: AppearanceVisualOption[];
   optionsExtension?: FactionOptionsExtension;
 }

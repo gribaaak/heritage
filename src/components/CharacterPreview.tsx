@@ -1,8 +1,16 @@
-import type { CharacterState, Faction } from '../data/types';
+import type {
+  AppearanceOptionKey,
+  AppearanceOptionSet,
+  AppearanceVisualOption,
+  CharacterState,
+  Faction
+} from '../data/types';
 
 interface CharacterPreviewProps {
   faction: Faction;
   character: CharacterState;
+  appearanceOptions: AppearanceOptionSet;
+  clothingOptions: AppearanceVisualOption[];
 }
 
 const getPreviewAccent = (factionId: string) => {
@@ -62,27 +70,81 @@ const getPreviewAccent = (factionId: string) => {
   }
 };
 
-export const CharacterPreview = ({ faction, character }: CharacterPreviewProps) => {
+const appearancePreviewFields: { key: AppearanceOptionKey; label: string }[] = [
+  { key: 'hairStyle', label: 'Прическа' },
+  { key: 'hairColor', label: 'Цвет волос' },
+  { key: 'faceShape', label: 'Форма лица' },
+  { key: 'eyeShape', label: 'Форма глаз' },
+  { key: 'eyeColor', label: 'Цвет глаз' },
+  { key: 'nose', label: 'Нос' },
+  { key: 'lips', label: 'Губы' },
+  { key: 'accessory', label: 'Особенность' }
+];
+
+export const CharacterPreview = ({
+  faction,
+  character,
+  appearanceOptions,
+  clothingOptions
+}: CharacterPreviewProps) => {
   const accent = getPreviewAccent(faction.id);
+
+  const findAppearanceOption = (key: AppearanceOptionKey, id: string) => {
+    return appearanceOptions[key].find((option) => option.id === id) ?? null;
+  };
+
+  const selectedClothing = clothingOptions.find((option) => option.id === character.clothing) ?? null;
+
+  const resolvedAppearance = appearancePreviewFields.map(({ key, label }) => {
+    const option = findAppearanceOption(key, character.appearance[key]);
+    return {
+      key,
+      label,
+      option
+    };
+  });
 
   return (
     <div className="preview-card">
       <h3>Предпросмотр</h3>
       <div className="preview-figure" style={{ borderColor: accent }}>
         <div className="preview-head" style={{ backgroundColor: accent }}>
-          <span className="preview-hair">{character.appearance.hairStyle}</span>
+          {(() => {
+            const hair = resolvedAppearance.find((item) => item.key === 'hairStyle')?.option;
+            if (!hair) {
+              return <span className="preview-hair">—</span>;
+            }
+            return (
+              <>
+                <img className="preview-layer" src={hair.layerSrc ?? hair.thumbnailSrc} alt={hair.label} />
+                <span className="preview-hair">{hair.label}</span>
+              </>
+            );
+          })()}
         </div>
         <div className="preview-face">
-          <span>{character.appearance.faceShape}</span>
-          <span>{character.appearance.eyeShape}</span>
-          <span>{character.appearance.eyeColor}</span>
-          <span>{character.appearance.nose}</span>
-          <span>{character.appearance.lips}</span>
+          {resolvedAppearance
+            .filter((item) => item.key !== 'hairStyle' && item.key !== 'accessory')
+            .map((item) => (
+              <span key={item.key}>{item.option?.label ?? '—'}</span>
+            ))}
         </div>
         <div className="preview-body">
-          <span>{character.clothing}</span>
+          {selectedClothing ? (
+            <>
+              <img className="preview-layer" src={selectedClothing.layerSrc ?? selectedClothing.thumbnailSrc} alt={selectedClothing.label} />
+              <span>{selectedClothing.label}</span>
+            </>
+          ) : (
+            <span>—</span>
+          )}
         </div>
-        <div className="preview-accessory">{character.appearance.accessory}</div>
+        <div className="preview-accessory">
+          {(() => {
+            const accessory = resolvedAppearance.find((item) => item.key === 'accessory')?.option;
+            return accessory ? accessory.label : '—';
+          })()}
+        </div>
       </div>
       <div className="preview-meta">
         <p>

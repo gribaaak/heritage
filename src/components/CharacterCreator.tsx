@@ -43,6 +43,15 @@ export const CharacterCreator = ({
 
   const clothingOptions = useMemo(() => getClothingOptions(faction.id), [faction.id]);
 
+  const resolveAppearanceLabel = (key: AppearanceOptionKey, id: string) => {
+    const options = appearanceOptions[key];
+    return options.find((option) => option.id === id)?.label ?? 'Не выбрано';
+  };
+
+  const resolveClothingLabel = (id: string) => {
+    return clothingOptions.find((option) => option.id === id)?.label ?? 'Не выбрано';
+  };
+
   const setCharacter = (partial: Partial<CharacterState>) => {
     onChange({ ...character, ...partial });
   };
@@ -70,13 +79,14 @@ export const CharacterCreator = ({
         const options = getAppearanceOptions(faction.id);
         const updated = { ...character.appearance };
         appearanceFields.forEach(({ key }) => {
-          updated[key] = getRandomFromArray(options[key]);
+          const option = getRandomFromArray(options[key]);
+          updated[key] = option.id;
         });
         onChange({ ...character, appearance: updated });
         break;
       }
       case 'outfit': {
-        setCharacter({ clothing: getRandomFromArray(clothingOptions) });
+        setCharacter({ clothing: getRandomFromArray(clothingOptions).id });
         break;
       }
     }
@@ -87,14 +97,14 @@ export const CharacterCreator = ({
     const gender = character.gender;
     const randomizedAppearance = { ...character.appearance };
     appearanceFields.forEach(({ key }) => {
-      randomizedAppearance[key] = getRandomFromArray(options[key]);
+      randomizedAppearance[key] = getRandomFromArray(options[key]).id;
     });
 
     onChange({
       ...character,
       name: getRandomName(faction, gender),
       appearance: randomizedAppearance,
-      clothing: getRandomFromArray(clothingOptions)
+      clothing: getRandomFromArray(clothingOptions).id
     });
   };
 
@@ -115,7 +125,7 @@ export const CharacterCreator = ({
         <StepControls
           steps={steps}
           currentStep={currentStep}
-          onChangeStep={setCurrentStep}
+          onChangeStep={(stepId) => setCurrentStep(stepId)}
           onBack={onBack}
           onRandomizeStep={handleRandomizeStep}
           onRandomizeAll={handleRandomizeAll}
@@ -193,7 +203,12 @@ export const CharacterCreator = ({
       </div>
 
       <div className="creator-column creator-column--preview">
-        <CharacterPreview faction={faction} character={character} />
+        <CharacterPreview
+          faction={faction}
+          character={character}
+          appearanceOptions={appearanceOptions}
+          clothingOptions={clothingOptions}
+        />
         <div className="summary-card">
           <h3>Хроника героя</h3>
           <ul>
@@ -204,8 +219,13 @@ export const CharacterCreator = ({
               <strong>Пол:</strong> {character.gender === 'male' ? 'Мужской' : 'Женский'}
             </li>
             <li>
-              <strong>Одежда:</strong> {character.clothing}
+              <strong>Одежда:</strong> {resolveClothingLabel(character.clothing)}
             </li>
+            {appearanceFields.map(({ key, label }) => (
+              <li key={key}>
+                <strong>{label}:</strong> {resolveAppearanceLabel(key, character.appearance[key])}
+              </li>
+            ))}
           </ul>
           <button type="button" className="button button-primary">
             Подтвердить героя

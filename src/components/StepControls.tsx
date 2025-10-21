@@ -1,27 +1,25 @@
-import type { Dispatch, SetStateAction } from 'react';
-
-interface Step {
-  id: string;
+interface Step<T extends string = string> {
+  id: T;
   title: string;
 }
 
-interface StepControlsProps {
-  steps: readonly Step[];
-  currentStep: string;
-  onChangeStep: Dispatch<SetStateAction<string>>;
+interface StepControlsProps<T extends string> {
+  steps: readonly Step<T>[];
+  currentStep: T;
+  onChangeStep: (stepId: T) => void;
   onBack: () => void;
   onRandomizeStep: () => void;
   onRandomizeAll: () => void;
 }
 
-export const StepControls = ({
+export const StepControls = <T extends string>({
   steps,
   currentStep,
   onChangeStep,
   onBack,
   onRandomizeAll,
   onRandomizeStep
-}: StepControlsProps) => {
+}: StepControlsProps<T>) => {
   return (
     <div className="step-controls">
       <div className="step-tabs">

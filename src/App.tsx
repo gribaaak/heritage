@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { factions, getAppearanceOptions, getInitialAppearance } from './data/factions';
+import { factions, getAppearanceOptions, getClothingOptions, getInitialAppearance } from './data/factions';
 import { CharacterCreator } from './components/CharacterCreator';
 import { FactionSelection } from './components/FactionSelection';
 import type { CharacterState, Faction } from './data/types';
@@ -8,7 +8,7 @@ const createDefaultCharacter = (faction: Faction): CharacterState => ({
   name: '',
   gender: 'male',
   appearance: getInitialAppearance(faction.id),
-  clothing: faction.baseClothing[0] ?? 'Базовая одежда'
+  clothing: getClothingOptions(faction.id)[0]?.id ?? ''
 });
 
 function App() {
