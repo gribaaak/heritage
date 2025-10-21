@@ -1,18 +1,23 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CharacterCanvas, type CharacterCanvasLayer } from './CharacterCanvas';
 import type {
   AppearanceLayer,
   AppearanceOptionKey,
   AppearanceOptionSet,
   AppearanceVisualOption,
   CharacterState,
-  Faction
+  Faction,
+  LayerTransform
 } from '../data/types';
-import type { CSSProperties } from 'react';
+import type { ChangeEvent, CSSProperties } from 'react';
 
 interface CharacterPreviewProps {
   faction: Faction;
   character: CharacterState;
   appearanceOptions: AppearanceOptionSet;
   clothingOptions: AppearanceVisualOption[];
+  onChangeLayerTransform: (layerId: string, transform: LayerTransform) => void;
+  onResetLayerTransform: (layerId: string) => void;
 }
 
 const getPreviewAccent = (factionId: string) => {
@@ -106,16 +111,13 @@ const baseSilhouetteLayer: AppearanceLayer = {
   transform: { x: 0, y: 0, scale: 1, rotation: 0 }
 };
 
-const layerTransformToCss = (transform: AppearanceLayer['transform']) => {
-  const { x, y, scale, rotation } = transform;
-  return `translate(${x}px, ${y}px) scale(${scale}) rotate(${rotation}deg)`;
-};
-
 export const CharacterPreview = ({
   faction,
   character,
   appearanceOptions,
-  clothingOptions
+  clothingOptions,
+  onChangeLayerTransform,
+  onResetLayerTransform
 }: CharacterPreviewProps) => {
   const accent = getPreviewAccent(faction.id);
   const accentSoft = hexToRgba(accent, 0.18);
@@ -126,46 +128,150 @@ export const CharacterPreview = ({
         optionId: selectedClothing.id,
         assetSrc: selectedClothing.assetSrc,
         zIndex: selectedClothing.zIndex,
-        transform: { ...selectedClothing.defaultTransform }
+        transform: {
+          ...(character.clothingTransform ?? selectedClothing.defaultTransform)
+        }
       }
     : null;
 
-  const appearanceLayers = (Object.values(character.appearance).filter(Boolean) as AppearanceLayer[]).map((layer) => ({
-    ...layer,
-    transform: { ...layer.transform }
-  }));
+  const appearanceLayers = useMemo(() => {
+    return (Object.values(character.appearance).filter(Boolean) as AppearanceLayer[]).map((layer) => ({
+      ...layer,
+      transform: { ...layer.transform }
+    }));
+  }, [character.appearance]);
 
-  const visualLayers = [
-    baseSilhouetteLayer,
-    ...appearanceLayers,
-    ...(clothingLayer ? [clothingLayer] : [])
-  ].sort((a, b) => a.zIndex - b.zIndex);
-
-  const hasVisualLayers = visualLayers.some((layer) => layer.optionId !== 'base-silhouette');
-
-  const layerLabels = new Map<string, string>();
-  (Object.keys(appearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
-    appearanceOptions[key].forEach((option) => {
-      layerLabels.set(option.id, option.label);
+  const layerLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    (Object.keys(appearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
+      appearanceOptions[key].forEach((option) => {
+        labels.set(option.id, option.label);
+      });
     });
-  });
-  clothingOptions.forEach((option) => {
-    layerLabels.set(option.id, option.label);
-  });
-  layerLabels.set(baseSilhouetteLayer.optionId, 'Силуэт героя');
+    clothingOptions.forEach((option) => {
+      labels.set(option.id, option.label);
+    });
+    labels.set(baseSilhouetteLayer.optionId, 'Силуэт героя');
+    return labels;
+  }, [appearanceOptions, clothingOptions]);
 
-  const resolvedAppearance = appearancePreviewFields.map(({ key, label }) => {
-    const layer = character.appearance[key];
-    const optionId = layer?.optionId ?? null;
-    const option = optionId
-      ? appearanceOptions[key].find((candidate) => candidate.id === optionId) ?? null
-      : null;
-    return {
-      key,
-      label,
-      option
+  const canvasLayers = useMemo<CharacterCanvasLayer[]>(() => {
+    const baseLayer: CharacterCanvasLayer = {
+      id: baseSilhouetteLayer.optionId,
+      label: layerLabels.get(baseSilhouetteLayer.optionId) ?? 'Силуэт героя',
+      assetSrc: baseSilhouetteLayer.assetSrc,
+      zIndex: baseSilhouetteLayer.zIndex,
+      transform: { ...baseSilhouetteLayer.transform },
+      isLocked: true
     };
-  });
+
+    const appearanceCanvasLayers: CharacterCanvasLayer[] = appearanceLayers.map((layer) => ({
+      id: layer.optionId,
+      label: layerLabels.get(layer.optionId) ?? 'Слой персонажа',
+      assetSrc: layer.assetSrc,
+      zIndex: layer.zIndex,
+      transform: { ...layer.transform }
+    }));
+
+    const clothingCanvasLayers: CharacterCanvasLayer[] = clothingLayer
+      ? [
+          {
+            id: clothingLayer.optionId,
+            label: layerLabels.get(clothingLayer.optionId) ?? 'Комплект одежды',
+            assetSrc: clothingLayer.assetSrc,
+            zIndex: clothingLayer.zIndex,
+            transform: { ...clothingLayer.transform }
+          }
+        ]
+      : [];
+
+    return [baseLayer, ...appearanceCanvasLayers, ...clothingCanvasLayers].sort((a, b) => a.zIndex - b.zIndex);
+  }, [appearanceLayers, clothingLayer, layerLabels]);
+
+  const editableLayers = useMemo(() => canvasLayers.filter((layer) => !layer.isLocked), [canvasLayers]);
+
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(() => editableLayers[0]?.id ?? null);
+
+  useEffect(() => {
+    if (editableLayers.length === 0) {
+      if (activeLayerId !== null) {
+        setActiveLayerId(null);
+      }
+      return;
+    }
+    if (!activeLayerId || !editableLayers.some((layer) => layer.id === activeLayerId)) {
+      setActiveLayerId(editableLayers[0].id);
+    }
+  }, [activeLayerId, editableLayers]);
+
+  const activeLayer = useMemo(
+    () => editableLayers.find((layer) => layer.id === activeLayerId) ?? null,
+    [editableLayers, activeLayerId]
+  );
+
+  const hasVisualLayers = useMemo(() => canvasLayers.some((layer) => !layer.isLocked), [canvasLayers]);
+
+  const handleSelectLayer = useCallback(
+    (layerId: string) => {
+      if (editableLayers.some((layer) => layer.id === layerId)) {
+        setActiveLayerId(layerId);
+      }
+    },
+    [editableLayers]
+  );
+
+  const updateActiveTransform = useCallback(
+    (partial: Partial<LayerTransform>) => {
+      if (!activeLayer) {
+        return;
+      }
+      const next: LayerTransform = { ...activeLayer.transform, ...partial } as LayerTransform;
+      onChangeLayerTransform(activeLayer.id, next);
+    },
+    [activeLayer, onChangeLayerTransform]
+  );
+
+  const handleNumberChange = useCallback(
+    (key: keyof LayerTransform) => (event: ChangeEvent<HTMLInputElement>) => {
+      const raw = Number(event.target.value);
+      if (Number.isNaN(raw)) {
+        return;
+      }
+      const value = key === 'scale' ? Math.min(Math.max(raw, 0.2), 3) : raw;
+      updateActiveTransform({ [key]: value } as Partial<LayerTransform>);
+    },
+    [updateActiveTransform]
+  );
+
+  const handleSliderChange = useCallback(
+    (key: keyof LayerTransform) => (event: ChangeEvent<HTMLInputElement>) => {
+      const raw = Number(event.target.value);
+      const value = key === 'scale' ? Math.min(Math.max(raw, 0.2), 3) : raw;
+      updateActiveTransform({ [key]: value } as Partial<LayerTransform>);
+    },
+    [updateActiveTransform]
+  );
+
+  const handleResetTransform = useCallback(() => {
+    if (activeLayer) {
+      onResetLayerTransform(activeLayer.id);
+    }
+  }, [activeLayer, onResetLayerTransform]);
+
+  const resolvedAppearance = useMemo(() => {
+    return appearancePreviewFields.map(({ key, label }) => {
+      const layer = character.appearance[key];
+      const optionId = layer?.optionId ?? null;
+      const option = optionId
+        ? appearanceOptions[key].find((candidate) => candidate.id === optionId) ?? null
+        : null;
+      return {
+        key,
+        label,
+        option
+      };
+    });
+  }, [appearanceOptions, character.appearance]);
 
   return (
     <div className="preview-card">
@@ -175,36 +281,137 @@ export const CharacterPreview = ({
         style={{ '--preview-accent': accent, '--preview-accent-soft': accentSoft } as CSSProperties}
       >
         <div className="preview-canvas" aria-label="Визуальный образ персонажа">
-          {visualLayers.map((layer) => (
-            <img
-              key={layer.optionId}
-              className="preview-layer"
-              data-layer={layer.optionId}
-              src={layer.assetSrc}
-              alt={layerLabels.get(layer.optionId) ?? 'Слой персонажа'}
-              style={{ zIndex: layer.zIndex, transform: layerTransformToCss(layer.transform) }}
-            />
-          ))}
+          <CharacterCanvas
+            layers={canvasLayers}
+            activeLayerId={activeLayerId}
+            onSelectLayer={handleSelectLayer}
+            onChangeLayerTransform={onChangeLayerTransform}
+          />
           {!hasVisualLayers && (
             <div className="preview-placeholder" role="presentation">
               <span>Нет выбранных элементов</span>
             </div>
           )}
         </div>
-        <div className="preview-details">
-          <dl className="preview-details-list">
-            {resolvedAppearance.map(({ key, label, option }) => (
-              <div key={key} className="preview-detail">
-                <dt>{label}</dt>
-                <dd>{option?.label ?? '—'}</dd>
+
+        <div className="transform-panel">
+          <div className="transform-panel__header">
+            <span className="transform-panel__title">Настройка слоя</span>
+            <span className="transform-panel__subtitle">
+              {activeLayer ? activeLayer.label : 'Выберите слой на холсте'}
+            </span>
+          </div>
+          {activeLayer ? (
+            <div className="transform-panel__controls">
+              <div className="transform-control">
+                <label htmlFor={`transform-${activeLayer.id}-x`}>Горизонталь</label>
+                <div className="transform-control__inputs">
+                  <input
+                    id={`transform-${activeLayer.id}-x`}
+                    type="range"
+                    min={-160}
+                    max={160}
+                    step={1}
+                    value={activeLayer.transform.x}
+                    onChange={handleSliderChange('x')}
+                  />
+                  <input
+                    type="number"
+                    value={Number(activeLayer.transform.x.toFixed(0))}
+                    step={1}
+                    onChange={handleNumberChange('x')}
+                  />
+                </div>
               </div>
-            ))}
-            <div className="preview-detail">
-              <dt>Одежда</dt>
-              <dd>{selectedClothing?.label ?? '—'}</dd>
+              <div className="transform-control">
+                <label htmlFor={`transform-${activeLayer.id}-y`}>Вертикаль</label>
+                <div className="transform-control__inputs">
+                  <input
+                    id={`transform-${activeLayer.id}-y`}
+                    type="range"
+                    min={-160}
+                    max={160}
+                    step={1}
+                    value={activeLayer.transform.y}
+                    onChange={handleSliderChange('y')}
+                  />
+                  <input
+                    type="number"
+                    value={Number(activeLayer.transform.y.toFixed(0))}
+                    step={1}
+                    onChange={handleNumberChange('y')}
+                  />
+                </div>
+              </div>
+              <div className="transform-control">
+                <label htmlFor={`transform-${activeLayer.id}-scale`}>Масштаб</label>
+                <div className="transform-control__inputs">
+                  <input
+                    id={`transform-${activeLayer.id}-scale`}
+                    type="range"
+                    min={0.4}
+                    max={2.5}
+                    step={0.01}
+                    value={activeLayer.transform.scale}
+                    onChange={handleSliderChange('scale')}
+                  />
+                  <input
+                    type="number"
+                    value={Number(activeLayer.transform.scale.toFixed(2))}
+                    step={0.05}
+                    onChange={handleNumberChange('scale')}
+                  />
+                </div>
+              </div>
+              <div className="transform-control">
+                <label htmlFor={`transform-${activeLayer.id}-rotation`}>Поворот</label>
+                <div className="transform-control__inputs">
+                  <input
+                    id={`transform-${activeLayer.id}-rotation`}
+                    type="range"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={activeLayer.transform.rotation}
+                    onChange={handleSliderChange('rotation')}
+                  />
+                  <div className="transform-control__number">
+                    <input
+                      type="number"
+                      value={Number(activeLayer.transform.rotation.toFixed(0))}
+                      step={1}
+                      onChange={handleNumberChange('rotation')}
+                    />
+                    <span className="transform-control__unit">°</span>
+                  </div>
+                </div>
+              </div>
+              <div className="transform-panel__actions">
+                <button type="button" className="button button-secondary" onClick={handleResetTransform}>
+                  Сбросить трансформацию
+                </button>
+              </div>
             </div>
-          </dl>
+          ) : (
+            <p className="transform-panel__empty">
+              Выберите слой на холсте, чтобы изменить позицию, масштаб или поворот.
+            </p>
+          )}
         </div>
+      </div>
+      <div className="preview-details">
+        <dl className="preview-details-list">
+          {resolvedAppearance.map(({ key, label, option }) => (
+            <div key={key} className="preview-detail">
+              <dt>{label}</dt>
+              <dd>{option?.label ?? '—'}</dd>
+            </div>
+          ))}
+          <div className="preview-detail">
+            <dt>Одежда</dt>
+            <dd>{selectedClothing?.label ?? '—'}</dd>
+          </div>
+        </dl>
       </div>
       <div className="preview-meta">
         <p>

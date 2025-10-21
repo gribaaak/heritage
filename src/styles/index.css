@@ -382,6 +382,12 @@ button {
   gap: 0.6rem;
 }
 
+fieldset.field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
 .field-label {
   font-weight: 600;
   color: #1e293b;
@@ -420,8 +426,25 @@ button {
 }
 
 .option-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.option-group-title {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.option-group-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
 }
 
@@ -494,6 +517,12 @@ button {
   text-align: center;
 }
 
+.option-card-description {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+}
+
 .creator-column--preview {
   position: sticky;
   top: 1.5rem;
@@ -535,6 +564,88 @@ button {
   box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.08);
 }
 
+.character-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.character-canvas__layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  cursor: grab;
+  transition: filter 160ms ease;
+}
+
+.character-canvas__layer:active {
+  cursor: grabbing;
+}
+
+.character-canvas__layer.is-locked {
+  cursor: default;
+}
+
+.character-canvas__layer.is-active .character-canvas__image {
+  filter: drop-shadow(0 10px 22px rgba(79, 70, 229, 0.28));
+}
+
+.character-canvas__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.character-canvas__outline {
+  position: absolute;
+  inset: 8%;
+  border-radius: 14px;
+  border: 2px dashed rgba(79, 70, 229, 0.55);
+  pointer-events: none;
+}
+
+.character-canvas__handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(79, 70, 229, 0.95);
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.25);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.character-canvas__handle--rotate {
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+}
+
+.character-canvas__handle--scale {
+  bottom: 8%;
+  right: 8%;
+  cursor: nwse-resize;
+}
+
+.character-canvas__handle--move {
+  bottom: 8%;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  cursor: move;
+  background: rgba(15, 23, 42, 0.88);
+}
+
+.character-canvas__handle--rotate:active,
+.character-canvas__handle--move:active {
+  cursor: grabbing;
+}
+
 .preview-layer {
   position: absolute;
   inset: 0;
@@ -555,6 +666,93 @@ button {
   font-size: 0.95rem;
   text-align: center;
   padding: 0 1rem;
+}
+
+.transform-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 14px;
+  padding: 1rem;
+  border: 1px solid var(--preview-accent-soft, rgba(79, 70, 229, 0.16));
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.transform-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.transform-panel__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.transform-panel__subtitle {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.transform-panel__controls {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.transform-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.transform-control label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.transform-control__inputs {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.transform-control__inputs input[type='range'] {
+  width: 100%;
+  accent-color: var(--preview-accent, #4f46e5);
+}
+
+.transform-control__inputs input[type='number'] {
+  width: 82px;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  font-size: 0.95rem;
+}
+
+.transform-control__number {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.transform-control__unit {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.transform-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.transform-panel__empty {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .preview-details {
@@ -650,6 +848,23 @@ button {
   }
 
   .button {
+    width: 100%;
+  }
+
+  .transform-control__inputs {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .transform-control__inputs input[type='number'] {
+    width: 100%;
+  }
+
+  .transform-panel__actions {
+    justify-content: stretch;
+  }
+
+  .transform-panel__actions .button {
     width: 100%;
   }
 }
