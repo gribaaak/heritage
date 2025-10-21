@@ -5,6 +5,7 @@ import type {
   CharacterState,
   Faction
 } from '../data/types';
+import type { CSSProperties } from 'react';
 
 interface CharacterPreviewProps {
   faction: Faction;
@@ -70,6 +71,22 @@ const getPreviewAccent = (factionId: string) => {
   }
 };
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const normalized = hex.replace('#', '');
+  const isShort = normalized.length === 3;
+  const expanded = isShort
+    ? normalized
+        .split('')
+        .map((char) => char + char)
+        .join('')
+    : normalized;
+  const numeric = parseInt(expanded, 16);
+  const r = (numeric >> 16) & 255;
+  const g = (numeric >> 8) & 255;
+  const b = numeric & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const appearancePreviewFields: { key: AppearanceOptionKey; label: string }[] = [
   { key: 'hairStyle', label: 'Прическа' },
   { key: 'hairColor', label: 'Цвет волос' },
@@ -88,6 +105,7 @@ export const CharacterPreview = ({
   clothingOptions
 }: CharacterPreviewProps) => {
   const accent = getPreviewAccent(faction.id);
+  const accentSoft = hexToRgba(accent, 0.18);
 
   const findAppearanceOption = (key: AppearanceOptionKey, id: string) => {
     return appearanceOptions[key].find((option) => option.id === id) ?? null;
@@ -104,46 +122,89 @@ export const CharacterPreview = ({
     };
   });
 
+  const hairOption =
+    resolvedAppearance.find((item) => item.key === 'hairStyle')?.option ??
+    resolvedAppearance.find((item) => item.key === 'hairColor')?.option ??
+    null;
+
+  const eyesOption =
+    resolvedAppearance.find((item) => item.key === 'eyeShape')?.option ??
+    resolvedAppearance.find((item) => item.key === 'eyeColor')?.option ??
+    null;
+
+  const accessoryOption = resolvedAppearance.find((item) => item.key === 'accessory')?.option ?? null;
+
+  const getLayerSrc = (option: AppearanceVisualOption | null) => option?.layerSrc ?? option?.thumbnailSrc ?? null;
+
+  const previewLayers = [
+    {
+      id: 'base',
+      label: 'Силуэт',
+      src: '/images/appearance/base-silhouette.svg'
+    },
+    hairOption && {
+      id: 'hair',
+      label: hairOption.label,
+      src: getLayerSrc(hairOption)
+    },
+    eyesOption && {
+      id: 'eyes',
+      label: eyesOption.label,
+      src: getLayerSrc(eyesOption)
+    },
+    accessoryOption && {
+      id: 'accessory',
+      label: accessoryOption.label,
+      src: getLayerSrc(accessoryOption)
+    },
+    selectedClothing && {
+      id: 'clothing',
+      label: selectedClothing.label,
+      src: getLayerSrc(selectedClothing)
+    }
+  ].filter(Boolean) as { id: string; label: string; src: string | null }[];
+
+  const hasVisualLayers = previewLayers.some((layer) => Boolean(layer.src));
+
   return (
     <div className="preview-card">
       <h3>Предпросмотр</h3>
-      <div className="preview-figure" style={{ borderColor: accent }}>
-        <div className="preview-head" style={{ backgroundColor: accent }}>
-          {(() => {
-            const hair = resolvedAppearance.find((item) => item.key === 'hairStyle')?.option;
-            if (!hair) {
-              return <span className="preview-hair">—</span>;
-            }
-            return (
-              <>
-                <img className="preview-layer" src={hair.layerSrc ?? hair.thumbnailSrc} alt={hair.label} />
-                <span className="preview-hair">{hair.label}</span>
-              </>
-            );
-          })()}
-        </div>
-        <div className="preview-face">
-          {resolvedAppearance
-            .filter((item) => item.key !== 'hairStyle' && item.key !== 'accessory')
-            .map((item) => (
-              <span key={item.key}>{item.option?.label ?? '—'}</span>
-            ))}
-        </div>
-        <div className="preview-body">
-          {selectedClothing ? (
-            <>
-              <img className="preview-layer" src={selectedClothing.layerSrc ?? selectedClothing.thumbnailSrc} alt={selectedClothing.label} />
-              <span>{selectedClothing.label}</span>
-            </>
-          ) : (
-            <span>—</span>
+      <div
+        className="preview-figure"
+        style={{ '--preview-accent': accent, '--preview-accent-soft': accentSoft } as CSSProperties}
+      >
+        <div className="preview-canvas" aria-label="Визуальный образ персонажа">
+          {previewLayers.map((layer, index) =>
+            layer.src ? (
+              <img
+                key={layer.id}
+                className="preview-layer"
+                data-layer={layer.id}
+                src={layer.src}
+                alt={layer.label}
+                style={{ zIndex: index + 1 }}
+              />
+            ) : null
+          )}
+          {!hasVisualLayers && (
+            <div className="preview-placeholder" role="presentation">
+              <span>Нет выбранных элементов</span>
+            </div>
           )}
         </div>
-        <div className="preview-accessory">
-          {(() => {
-            const accessory = resolvedAppearance.find((item) => item.key === 'accessory')?.option;
-            return accessory ? accessory.label : '—';
-          })()}
+        <div className="preview-details">
+          <dl className="preview-details-list">
+            {resolvedAppearance.map(({ key, label, option }) => (
+              <div key={key} className="preview-detail">
+                <dt>{label}</dt>
+                <dd>{option?.label ?? '—'}</dd>
+              </div>
+            ))}
+            <div className="preview-detail">
+              <dt>Одежда</dt>
+              <dd>{selectedClothing?.label ?? '—'}</dd>
+            </div>
+          </dl>
         </div>
       </div>
       <div className="preview-meta">
