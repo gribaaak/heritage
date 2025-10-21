@@ -1,4 +1,5 @@
 import type {
+  AppearanceLayer,
   AppearanceOptionKey,
   AppearanceOptionSet,
   AppearanceVisualOption,
@@ -98,6 +99,18 @@ const appearancePreviewFields: { key: AppearanceOptionKey; label: string }[] = [
   { key: 'accessory', label: 'Особенность' }
 ];
 
+const baseSilhouetteLayer: AppearanceLayer = {
+  optionId: 'base-silhouette',
+  assetSrc: '/images/appearance/base-silhouette.svg',
+  zIndex: 0,
+  transform: { x: 0, y: 0, scale: 1, rotation: 0 }
+};
+
+const layerTransformToCss = (transform: AppearanceLayer['transform']) => {
+  const { x, y, scale, rotation } = transform;
+  return `translate(${x}px, ${y}px) scale(${scale}) rotate(${rotation}deg)`;
+};
+
 export const CharacterPreview = ({
   faction,
   character,
@@ -107,64 +120,52 @@ export const CharacterPreview = ({
   const accent = getPreviewAccent(faction.id);
   const accentSoft = hexToRgba(accent, 0.18);
 
-  const findAppearanceOption = (key: AppearanceOptionKey, id: string) => {
-    return appearanceOptions[key].find((option) => option.id === id) ?? null;
-  };
-
   const selectedClothing = clothingOptions.find((option) => option.id === character.clothing) ?? null;
+  const clothingLayer: AppearanceLayer | null = selectedClothing
+    ? {
+        optionId: selectedClothing.id,
+        assetSrc: selectedClothing.assetSrc,
+        zIndex: selectedClothing.zIndex,
+        transform: { ...selectedClothing.defaultTransform }
+      }
+    : null;
+
+  const appearanceLayers = (Object.values(character.appearance).filter(Boolean) as AppearanceLayer[]).map((layer) => ({
+    ...layer,
+    transform: { ...layer.transform }
+  }));
+
+  const visualLayers = [
+    baseSilhouetteLayer,
+    ...appearanceLayers,
+    ...(clothingLayer ? [clothingLayer] : [])
+  ].sort((a, b) => a.zIndex - b.zIndex);
+
+  const hasVisualLayers = visualLayers.some((layer) => layer.optionId !== 'base-silhouette');
+
+  const layerLabels = new Map<string, string>();
+  (Object.keys(appearanceOptions) as AppearanceOptionKey[]).forEach((key) => {
+    appearanceOptions[key].forEach((option) => {
+      layerLabels.set(option.id, option.label);
+    });
+  });
+  clothingOptions.forEach((option) => {
+    layerLabels.set(option.id, option.label);
+  });
+  layerLabels.set(baseSilhouetteLayer.optionId, 'Силуэт героя');
 
   const resolvedAppearance = appearancePreviewFields.map(({ key, label }) => {
-    const option = findAppearanceOption(key, character.appearance[key]);
+    const layer = character.appearance[key];
+    const optionId = layer?.optionId ?? null;
+    const option = optionId
+      ? appearanceOptions[key].find((candidate) => candidate.id === optionId) ?? null
+      : null;
     return {
       key,
       label,
       option
     };
   });
-
-  const hairOption =
-    resolvedAppearance.find((item) => item.key === 'hairStyle')?.option ??
-    resolvedAppearance.find((item) => item.key === 'hairColor')?.option ??
-    null;
-
-  const eyesOption =
-    resolvedAppearance.find((item) => item.key === 'eyeShape')?.option ??
-    resolvedAppearance.find((item) => item.key === 'eyeColor')?.option ??
-    null;
-
-  const accessoryOption = resolvedAppearance.find((item) => item.key === 'accessory')?.option ?? null;
-
-  const getLayerSrc = (option: AppearanceVisualOption | null) => option?.layerSrc ?? option?.thumbnailSrc ?? null;
-
-  const previewLayers = [
-    {
-      id: 'base',
-      label: 'Силуэт',
-      src: '/images/appearance/base-silhouette.svg'
-    },
-    hairOption && {
-      id: 'hair',
-      label: hairOption.label,
-      src: getLayerSrc(hairOption)
-    },
-    eyesOption && {
-      id: 'eyes',
-      label: eyesOption.label,
-      src: getLayerSrc(eyesOption)
-    },
-    accessoryOption && {
-      id: 'accessory',
-      label: accessoryOption.label,
-      src: getLayerSrc(accessoryOption)
-    },
-    selectedClothing && {
-      id: 'clothing',
-      label: selectedClothing.label,
-      src: getLayerSrc(selectedClothing)
-    }
-  ].filter(Boolean) as { id: string; label: string; src: string | null }[];
-
-  const hasVisualLayers = previewLayers.some((layer) => Boolean(layer.src));
 
   return (
     <div className="preview-card">
@@ -174,18 +175,16 @@ export const CharacterPreview = ({
         style={{ '--preview-accent': accent, '--preview-accent-soft': accentSoft } as CSSProperties}
       >
         <div className="preview-canvas" aria-label="Визуальный образ персонажа">
-          {previewLayers.map((layer, index) =>
-            layer.src ? (
-              <img
-                key={layer.id}
-                className="preview-layer"
-                data-layer={layer.id}
-                src={layer.src}
-                alt={layer.label}
-                style={{ zIndex: index + 1 }}
-              />
-            ) : null
-          )}
+          {visualLayers.map((layer) => (
+            <img
+              key={layer.optionId}
+              className="preview-layer"
+              data-layer={layer.optionId}
+              src={layer.assetSrc}
+              alt={layerLabels.get(layer.optionId) ?? 'Слой персонажа'}
+              style={{ zIndex: layer.zIndex, transform: layerTransformToCss(layer.transform) }}
+            />
+          ))}
           {!hasVisualLayers && (
             <div className="preview-placeholder" role="presentation">
               <span>Нет выбранных элементов</span>
