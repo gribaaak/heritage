@@ -49,7 +49,12 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>Heritage: Создание героя</h1>
+        <img
+          src="/images/design/Heritage-title.png"
+          alt="Heritage"
+          className="app-header-logo"
+        />
+        <h1>Создайте легенду своего народа</h1>
         <p className="app-subtitle">
           Выберите свою нацию, создайте уникального героя и приготовьтесь к первой битве.
         </p>
